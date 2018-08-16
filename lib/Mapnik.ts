@@ -1,7 +1,7 @@
 const path = require('path')
 const fs = require('fs')
 
-module.exports = {
+export const Mapnik = {
   loadXml (sources, pack) {
     return Object.keys(sources).map(name => {
       const config = sources[name]

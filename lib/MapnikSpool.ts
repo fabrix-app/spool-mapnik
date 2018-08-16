@@ -1,30 +1,40 @@
-'use strict'
-
+import { Spool } from '@fabrix/fabrix/dist/common'
 const assert = require('assert')
-const Trailpack = require('trailpack')
-const Tilelive = require('tilelive')
-const Mapnik = require('@langa/mapnik')
+import * as TileliveModule from 'tilelive'
+import { Tilelive } from './Tilelive'
+import { Mapnik } from './Mapnik'
+import * as MapnikModule from '@langa/mapnik'
+
 const aws = require('aws-sdk')
-const lib = require('./')
+
+import * as config from './config/index'
+import * as pkg from '../package.json'
+import * as api  from './api/index'
 
 // support runtime override of MAPNIK_INPUT_PLUGINS and MAPNIK_FONTS paths
 if (process.env.MAPNIK_INPUT_PLUGINS) {
-  Mapnik.settings.paths.input_plugins = process.env.MAPNIK_INPUT_PLUGINS
+  MapnikModule.settings.paths.input_plugins = process.env.MAPNIK_INPUT_PLUGINS
 }
 if (process.env.MAPNIK_FONTS) {
-  Mapnik.settings.paths.fonts = process.env.MAPNIK_FONTS
+  MapnikModule.settings.paths.fonts = process.env.MAPNIK_FONTS
 }
 
-module.exports = class MapnikTrailpack extends Trailpack {
-
+export class MapnikSpool extends Spool {
+  constructor (app) {
+    super(app, {
+      config: config,
+      api: api,
+      pkg: pkg
+    })
+  }
   /**
    * Check that the configured mapnik XML files exist, and appear valid.
    */
   validate () {
-    assert(this.app.config.mapnik)
-    assert(this.app.config.mapnik.maps)
-    assert(this.app.config.mapnik.modules)
-    //return lib.Tilelive.validateTileSources(this.app.config.mapnik.maps)
+    assert(this.app.config.get('mapnik'))
+    assert(this.app.config.get('mapnik.maps'))
+    assert(this.app.config.get('mapnik.modules'))
+    //return Tilelive.validateTileSources(this.app.config.mapnik.maps)
   }
 
   /**
@@ -33,10 +43,10 @@ module.exports = class MapnikTrailpack extends Trailpack {
   configure () {
     this.sources = { }
     this.aws = { }
-    aws.config = this.app.config.aws.config
+    aws.config = this.app.config.get('aws.config')
 
-    Mapnik.register_default_fonts()
-    Mapnik.register_default_input_plugins()
+    MapnikModule.register_default_fonts()
+    MapnikModule.register_default_input_plugins()
   }
 
   /**
@@ -51,9 +61,9 @@ module.exports = class MapnikTrailpack extends Trailpack {
     })
 
     this.log.debug('Registering tilelive modules...')
-    this.app.config.mapnik.modules.forEach(plugin => plugin.registerProtocols(Tilelive))
+    this.app.config.get('mapnik.modules').forEach(plugin => plugin.registerProtocols(TileliveModule))
 
-    return lib.Tilelive.loadTileSources(this.app.config.mapnik.maps, this)
+    return TileliveModule.loadTileSources(this.app.config.get('mapnik.maps'), this)
   }
 
   /**
@@ -71,14 +81,6 @@ module.exports = class MapnikTrailpack extends Trailpack {
   }
 
   get tl () {
-    return Tilelive
-  }
-
-  constructor (app) {
-    super(app, {
-      config: require('./config'),
-      api: require('./api'),
-      pkg: require('./package')
-    })
+    return TileliveModule
   }
 }

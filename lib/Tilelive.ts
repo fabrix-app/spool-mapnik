@@ -1,8 +1,7 @@
-//const fs = require('fs')
-const Tilelive = require('tilelive')
+import * as TileliveModule from 'titlelive'
 const cloneDeep = require('lodash.clonedeep')
 
-module.exports = {
+export const Tilelive = {
   validateTileSources (sources) {
     return Promise.all(Object.keys(sources).map(name => {
       const protocol = sources[name]
@@ -10,8 +9,8 @@ module.exports = {
       if (!protocol.protocol) return
 
       return new Promise((resolve, reject) => {
-        Tilelive.info(protocol, (err, info) => {
-          const errors = Tilelive.verify(info)
+        TileliveModule.info(protocol, (err, info) => {
+          const errors = TileliveModule.verify(info)
 
           if (err) return reject(err)
           if (errors && errors.length) {
@@ -31,8 +30,8 @@ module.exports = {
       if (!protocol.protocol) return
 
       return new Promise((resolve, reject) => {
-        pack.log.debug('Loading tilelive map source', name, '...')
-        Tilelive.load(cloneDeep(protocol), (err, source) => {
+        pack.log.debug('Loading TileliveModule map source', name, '...')
+        TileliveModule.load(cloneDeep(protocol), (err, source) => {
           if (err) return reject(err)
 
           //source.xml = fs.readFileSync(protocol.pathname).toString()
