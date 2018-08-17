@@ -21,6 +21,13 @@ jobs:
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run:
+          name: mapnik
+          command: |
+            sudo add-apt-repository ppa:mapnik/nightly-trunk -y
+            sudo apt-get update
+            sudo apt-get install libmapnik libmapnik-dev mapnik-utils mapnik-vector-tile -y
+            sudo apt-get install mapnik-input-plugin-gdal mapnik-input-plugin-ogr mapnik-input-plugin-postgis -y
+      - run:
           name: install-npm-wee
           command: npm install
       - save_cache:

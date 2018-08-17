@@ -16,7 +16,7 @@ module.exports = _.defaultsDeep({
   config: {
     main: {
       spools: [
-        require('../../dist').MapnikSpool  // trailpack-mapnik
+        require('../../dist').MapnikSpool  // spool-mapnik
       ]
     },
     mapnik: {

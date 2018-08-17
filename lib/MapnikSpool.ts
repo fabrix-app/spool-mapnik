@@ -73,7 +73,7 @@ export class MapnikSpool extends Spool {
     return Promise.all(
       Object.keys(this.sources).map(sourceName => {
         return new Promise((resolve, reject) => {
-          this.log.debug('trailpack-tilelive: closing tilelive source', sourceName)
+          this.log.debug('spool-tilelive: closing tilelive source', sourceName)
           const source = this.sources[sourceName]
           source.close(resolve)
         })
