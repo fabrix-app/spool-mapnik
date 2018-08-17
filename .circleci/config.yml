@@ -23,6 +23,7 @@ jobs:
       - run:
           name: mapnik
           command: |
+            sudo apt-get update
             sudo add-apt-repository ppa:mapnik/nightly-trunk -y
             sudo apt-get update
             sudo apt-get install libmapnik libmapnik-dev mapnik-utils mapnik-vector-tile -y
