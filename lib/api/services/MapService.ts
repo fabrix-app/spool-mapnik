@@ -1,5 +1,7 @@
+// tslint:disable:no-shadowed-variable
+
 import { FabrixService as Service } from '@fabrix/fabrix/dist/common'
-import * as mapnik from '@langa/mapnik'
+const mapnik = require('mapnik')
 
 mapnik.Logger.setSeverity(mapnik.Logger.DEBUG)
 
@@ -16,8 +18,8 @@ export class MapService extends Service {
    * @param map.height Number The height of the output image in pixels
    */
   getMap(source, { bbox: [ w, s, e, n], width, height, options = {} }) {
-    const configFile = this.app.config.mapnik.maps[source].pathname
-    const map = new mapnik.Map(parseInt(width), parseInt(height))
+    const configFile = this.app.config.get(`mapnik.maps.${source}.pathname`)
+    const map = new mapnik.Map(parseInt(width, 10), parseInt(height, 10))
 
     return new Promise((resolve, reject) => {
       map.load(configFile, (err, map) => {
@@ -28,15 +30,19 @@ export class MapService extends Service {
 
         map.extent = [ w, s, e, n ]
 
-        const image = new mapnik.Image(parseInt(width), parseInt(height))
+        const image = new mapnik.Image(parseInt(width, 10), parseInt(height, 10))
 
         this.log.debug(`MapService.getMap RENDERING src=${source} w=${width} h=${height}`)
         map.render(image, { scale: 1, buffer_size: 1, options: options }, (err, image) => {
-          if (err) return reject(err)
+          if (err) {
+            return reject(err)
+          }
 
           this.log.debug(`MapService.getMap ENCODING IMAGE src=${source} w=${width} h=${height}`)
           image.encode('png', (err, buffer) => {
-            if (err) return reject(err)
+            if (err) {
+              return reject(err)
+            }
 
             resolve({ buffer, headers: { 'Content-Type': 'image/png' } })
           })
@@ -50,21 +56,23 @@ export class MapService extends Service {
       .then(({x, y, z}) => {
         return this.downloadTile(source, {x, y, z})
       })
-      .then(tile => {
-        if (tile) return tile
+      .then(({tile, headers}) => {
+        if (tile && headers) {
+          return { tile, headers }
+        }
 
         return this.renderTile(source, {x, y, z})
-          .then(tile => {
+          .then(({ tile, headers }) => {
             // async. do not wait for tile upload. return immediately
-            process.nextTick(() => this.uploadTile(source, {x, y, z}, tile))
+            process.nextTick(() => this.uploadTile(source, {x, y, z}, { tile, headers }))
 
-            return tile
+            return { tile, headers }
           })
       })
   }
 
   downloadTile (source, {x, y, z}) {
-    const s3cache = this.app.config.mapnik.s3cache[source]
+    const s3cache = this.app.config.get(`mapnik.s3cache.${source}`)
     const AWSService = this.app.services.AWSService
     const t0 = Date.now()
 
@@ -100,7 +108,7 @@ export class MapService extends Service {
 
   uploadTile (source, {x, y, z}, { tile, headers }) {
     const AWSService = this.app.services.AWSService
-    const s3cache = this.app.config.mapnik.s3cache[source]
+    const s3cache = this.app.config.get(`mapnik.s3cache.${source}`)
 
     this.log.debug(`Caching tile ${source}/${z}/${x}/${y} in bucket ${s3cache.Bucket}...`)
 
@@ -124,8 +132,10 @@ export class MapService extends Service {
     const t0 = Date.now()
 
     return new Promise((resolve, reject) => {
-      this.app.packs.mapnik.sources[source].getTile(z, x, y, (err, tile, headers) => {
-        if (err) return reject(err)
+      this.app.spools.mapnik.sources[source].getTile(z, x, y, (err, tile, headers) => {
+        if (err) {
+          return reject(err)
+        }
 
         this.log.debug(`Tile rendered: ${source}/${z}/${x}/${y},`,
           `size=${Math.round(tile.length / 1024)}kb`,
@@ -137,10 +147,10 @@ export class MapService extends Service {
   }
 
   validateTileParameters (source, {x, y, z}) {
-    const Source = this.app.packs.mapnik.sources[source]
-    x = parseInt(x)
-    y = parseInt(y)
-    z = parseInt(z)
+    const Source = this.app.spools.mapnik.sources[source]
+    x = parseInt(x, 10)
+    y = parseInt(y, 10)
+    z = parseInt(z, 10)
 
     if (!Source) {
       return Promise.reject(new Error(`Tile source "${source}" is not available.`))

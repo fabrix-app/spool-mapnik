@@ -33,7 +33,7 @@ module.exports = _.defaultsDeep({
         }
       },
       modules: [
-        require('@langa/tilelive-mapnik')
+        require('tilelive-mapnik')
       ]
     }
 

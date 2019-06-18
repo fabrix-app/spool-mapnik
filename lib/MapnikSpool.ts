@@ -1,11 +1,12 @@
 import { Spool } from '@fabrix/fabrix/dist/common'
 const assert = require('assert')
-import * as TileliveModule from 'tilelive'
-import { Tilelive } from './Tilelive'
-import { Mapnik } from './Mapnik'
-import * as MapnikModule from '@langa/mapnik'
 
-const aws = require('aws-sdk')
+import { Tilelive } from './Tilelive'
+// import { Mapnik } from './Mapnik'
+const MapnikModule = require('mapnik')
+const TileliveModule = require('@mapbox/tilelive')
+
+import aws from 'aws-sdk'
 
 import * as config from './config/index'
 import * as pkg from '../package.json'
@@ -34,7 +35,7 @@ export class MapnikSpool extends Spool {
     assert(this.app.config.get('mapnik'))
     assert(this.app.config.get('mapnik.maps'))
     assert(this.app.config.get('mapnik.modules'))
-    //return Tilelive.validateTileSources(this.app.config.mapnik.maps)
+    // return Tilelive.validateTileSources(this.app.config.get('mapnik.maps'))
   }
 
   /**
@@ -53,7 +54,7 @@ export class MapnikSpool extends Spool {
    * Setup tilelive, connect to datasources.
    */
   initialize () {
-    const awsServices = this.app.config.aws.services
+    const awsServices = this.app.config.get('aws.services')
     this.log.info('Instantiating AWS Services', awsServices, '...')
 
     awsServices.forEach(service => {
