@@ -1,8 +1,7 @@
-const TileliveModule = require('@mapbox/tilelive')
-const cloneDeep = require('lodash.clonedeep')
+import { cloneDeep } from 'lodash'
 
 export const Tilelive = {
-  validateTileSources (sources) {
+  validateTileSources (mod, sources) {
     return Promise.all(Object.keys(sources).map(name => {
       const protocol = sources[name]
 
@@ -11,8 +10,8 @@ export const Tilelive = {
       }
 
       return new Promise((resolve, reject) => {
-        TileliveModule.info(protocol, (err, info) => {
-          const errors = TileliveModule.verify(info)
+        mod.info(protocol, (err, info) => {
+          const errors = mod.verify(info)
 
           if (err) {
             return reject(err)
@@ -27,25 +26,36 @@ export const Tilelive = {
     }))
   },
 
-  loadTileSources (sources, pack) {
-    return Promise.all(Object.keys(sources).map(name => {
+  loadTileSources (mod, sources: {[key: string]: any} = {}, spool) {
+    const _map = Object.keys(sources) || []
+
+    if (_map.length === 0) {
+      return Promise.all([])
+    }
+
+    return Promise.all(_map.map(name => {
       const protocol = sources[name]
 
       if (!protocol.protocol) {
-        return
+        return Promise.resolve({})
       }
 
       return new Promise((resolve, reject) => {
-        pack.log.debug('Loading TileliveModule map source', name, '...')
-        TileliveModule.load(cloneDeep(protocol), (err, source) => {
+        spool.log.debug('Loading TileliveModule map source', name, '...')
+
+        if (!mod.load) {
+          return resolve({})
+        }
+
+        mod.load(cloneDeep(protocol), (err, source) => {
           if (err) {
             return reject(err)
           }
 
           // source.xml = fs.readFileSync(protocol.pathname).toString()
           // source.options = protocol.query || { }
-          pack.sources[name] = source
-          resolve()
+          spool.sources[name] = source
+          resolve({})
         })
       })
     }))

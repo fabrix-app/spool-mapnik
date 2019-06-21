@@ -46,12 +46,12 @@
   </Layer>
   -->
 
-  <Layer name="streets_layer" srs="+init=epsg:3857">
-    <StyleName>basemap</StyleName>
-    <Datasource>
-      <Parameter name="type">gdal</Parameter>
-      <Parameter name="file">gdal_osm_basemap_cache.xml</Parameter>
-    </Datasource>
-  </Layer>
+  <!--<Layer name="streets_layer" srs="+init=epsg:3857">-->
+    <!--<StyleName>basemap</StyleName>-->
+    <!--<Datasource>-->
+      <!--<Parameter name="type">gdal</Parameter>-->
+      <!--<Parameter name="file">gdal_osm_basemap_cache.xml</Parameter>-->
+    <!--</Datasource>-->
+  <!--</Layer>-->
 
 </Map>

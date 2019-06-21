@@ -33,7 +33,7 @@ module.exports = _.defaultsDeep({
         }
       },
       modules: [
-        require('tilelive-mapnik')
+        require('@mapbox/tilelive-mapnik')
       ]
     }
 

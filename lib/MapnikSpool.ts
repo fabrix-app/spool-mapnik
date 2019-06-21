@@ -2,10 +2,8 @@ import { Spool } from '@fabrix/fabrix/dist/common'
 const assert = require('assert')
 
 import { Tilelive } from './Tilelive'
-// import { Mapnik } from './Mapnik'
 const MapnikModule = require('mapnik')
 const TileliveModule = require('@mapbox/tilelive')
-
 import aws from 'aws-sdk'
 
 import * as config from './config/index'
@@ -20,6 +18,14 @@ if (process.env.MAPNIK_FONTS) {
   MapnikModule.settings.paths.fonts = process.env.MAPNIK_FONTS
 }
 
+if (MapnikModule.register_default_fonts) {
+  MapnikModule.register_default_fonts()
+}
+if (MapnikModule.register_system_fonts) {
+  MapnikModule.register_system_fonts()
+}
+
+
 export class MapnikSpool extends Spool {
   constructor (app) {
     super(app, {
@@ -31,52 +37,76 @@ export class MapnikSpool extends Spool {
   /**
    * Check that the configured mapnik XML files exist, and appear valid.
    */
-  validate () {
+  async validate () {
     assert(this.app.config.get('mapnik'))
     assert(this.app.config.get('mapnik.maps'))
     assert(this.app.config.get('mapnik.modules'))
-    // return Tilelive.validateTileSources(this.app.config.get('mapnik.maps'))
+    // return Tilelive.validateTileSources(TileliveModule, this.app.config.get('mapnik.maps'))
+    return Promise.resolve()
   }
 
   /**
    * Register tilelive modules
    */
-  configure () {
+  async configure () {
     this.sources = { }
     this.aws = { }
     aws.config = this.app.config.get('aws.config')
 
-    MapnikModule.register_default_fonts()
-    MapnikModule.register_default_input_plugins()
+    // if (MapnikModule.register_default_fonts) {
+    //   MapnikModule.register_default_fonts()
+    // }
+    // if (MapnikModule.register_default_input_plugins) {
+    //   MapnikModule.register_default_input_plugins()
+    // }
+
+    return Promise.resolve()
   }
 
   /**
    * Setup tilelive, connect to datasources.
    */
-  initialize () {
+  async initialize () {
     const awsServices = this.app.config.get('aws.services')
-    this.log.info('Instantiating AWS Services', awsServices, '...')
+    this.app.log.info('Instantiating AWS Services', awsServices, '...')
 
     awsServices.forEach(service => {
-      this.app.services.AWSService[service] = new aws[service]()
+      if (service) {
+        this.app.services.AWSService[service] = new aws[service]()
+      }
     })
 
-    this.log.debug('Registering tilelive modules...')
-    this.app.config.get('mapnik.modules').forEach(plugin => plugin.registerProtocols(TileliveModule))
+    this.app.log.debug('Registering tilelive modules...')
 
-    return TileliveModule.loadTileSources(this.app.config.get('mapnik.maps'), this)
+    const mods = this.app.config.get('mapnik.modules') || []
+
+    mods.forEach(plugin => {
+        if (plugin && plugin.registerProtocols) {
+          plugin.registerProtocols(TileliveModule)
+        }
+        else {
+          this.app.log.warn(`${plugin} does not have method registerProtocols`)
+        }
+      })
+
+    return Tilelive.loadTileSources(TileliveModule, this.app.config.get('mapnik.maps'), this)
   }
 
   /**
    * Close down the tilelive sources. clears tilecache and destroys the pool.
    */
-  unload () {
+  async unload () {
     return Promise.all(
-      Object.keys(this.sources).map(sourceName => {
+      Object.keys(this.sources || {}).map(sourceName => {
         return new Promise((resolve, reject) => {
-          this.log.debug('spool-tilelive: closing tilelive source', sourceName)
+          this.app.log.debug('spool-tilelive: closing tilelive source', sourceName)
           const source = this.sources[sourceName]
-          source.close(resolve)
+          try {
+            source.close(resolve)
+          }
+          catch (err) {
+            return reject(err)
+          }
         })
       }))
   }

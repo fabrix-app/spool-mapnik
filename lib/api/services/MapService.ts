@@ -24,7 +24,7 @@ export class MapService extends Service {
     return new Promise((resolve, reject) => {
       map.load(configFile, (err, map) => {
         if (err) {
-          this.log.warn(err)
+          this.app.log.warn(err)
           return reject(err)
         }
 
@@ -32,13 +32,13 @@ export class MapService extends Service {
 
         const image = new mapnik.Image(parseInt(width, 10), parseInt(height, 10))
 
-        this.log.debug(`MapService.getMap RENDERING src=${source} w=${width} h=${height}`)
+        this.app.log.debug(`MapService.getMap RENDERING src=${source} w=${width} h=${height}`)
         map.render(image, { scale: 1, buffer_size: 1, options: options }, (err, image) => {
           if (err) {
             return reject(err)
           }
 
-          this.log.debug(`MapService.getMap ENCODING IMAGE src=${source} w=${width} h=${height}`)
+          this.app.log.debug(`MapService.getMap ENCODING IMAGE src=${source} w=${width} h=${height}`)
           image.encode('png', (err, buffer) => {
             if (err) {
               return reject(err)
@@ -82,15 +82,15 @@ export class MapService extends Service {
         Key: s3cache.getKey({ x, y, z })
       }, (err, data) => {
         if (err && err.name === 'NoSuchKey') {
-          this.log.info(`Tile cache miss: ${source}/${z}/${x}/${y}`)
+          this.app.log.info(`Tile cache miss: ${source}/${z}/${x}/${y}`)
           resolve()
         }
         else if (err) {
-          this.log.warn('S3 Error:', err)
+          this.app.log.warn('S3 Error:', err)
           resolve()
         }
         else if (Buffer.isBuffer(data.Body)) {
-          this.log.info(`Retrieved tile ${source}/${z}/${x}/${y} from s3 in ${(Date.now() - t0)}ms`)
+          this.app.log.info(`Retrieved tile ${source}/${z}/${x}/${y} from s3 in ${(Date.now() - t0)}ms`)
           resolve({
             tile: data.Body,
             headers: {
@@ -99,7 +99,7 @@ export class MapService extends Service {
           })
         }
         else {
-          this.log.warn(`Tile from S3 ${source}/${z}/${x}/${y} is not a buffer.`)
+          this.app.log.warn(`Tile from S3 ${source}/${z}/${x}/${y} is not a buffer.`)
           resolve()
         }
       })
@@ -110,7 +110,7 @@ export class MapService extends Service {
     const AWSService = this.app.services.AWSService
     const s3cache = this.app.config.get(`mapnik.s3cache.${source}`)
 
-    this.log.debug(`Caching tile ${source}/${z}/${x}/${y} in bucket ${s3cache.Bucket}...`)
+    this.app.log.debug(`Caching tile ${source}/${z}/${x}/${y} in bucket ${s3cache.Bucket}...`)
 
     const t1 = Date.now()
     AWSService.S3.putObject({
@@ -120,10 +120,10 @@ export class MapService extends Service {
       Body: tile
     }, (err, data) => {
       if (err) {
-        this.log.warn('S3 Cache failed on tile [', z, x, y, ']:', err)
+        this.app.log.warn('S3 Cache failed on tile [', z, x, y, ']:', err)
       }
       else {
-        this.log.info(`Cached tile ${source}/${z}/${x}/${y} in ${(Date.now() - t1)}ms`)
+        this.app.log.info(`Cached tile ${source}/${z}/${x}/${y} in ${(Date.now() - t1)}ms`)
       }
     })
   }
@@ -137,7 +137,7 @@ export class MapService extends Service {
           return reject(err)
         }
 
-        this.log.debug(`Tile rendered: ${source}/${z}/${x}/${y},`,
+        this.app.log.debug(`Tile rendered: ${source}/${z}/${x}/${y},`,
           `size=${Math.round(tile.length / 1024)}kb`,
           `elapsed=${(Date.now() - t0)}ms`)
 
