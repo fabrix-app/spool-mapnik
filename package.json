@@ -52,7 +52,7 @@
   "dependencies": {
     "@mapbox/tilelive": "^5.12.6",
     "@mapbox/tilelive-mapnik": "^1.0.0",
-    "aws-sdk": "2.3.19",
+    "aws-sdk": "2.814.0",
     "lodash": "^4.17.11"
   },
   "devDependencies": {
